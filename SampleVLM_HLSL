@@ -1,0 +1,35 @@
+//Samples the Volumetric Lightmap Directly in a material. 
+// Credit to Unreal Forums user @Char_ly: https://forums.unrealengine.com/t/get-volumetric-lightmaps-value-for-a-world-position/637245/4
+
+//In testing it's a little weird (throwing this into Emissive on an unlit material looks much brighter than a lit, plain white material sampling the VLM normally), but there's definite potential for using this in a cheap, non-standard shading model
+#if PRECOMPUTED_IRRADIANCE_VOLUME_LIGHTING
+
+// Compute indirection UVs from world position
+
+float3 IndirectionVolumeUVs = clamp(WorldPosition * View.VolumetricLightmapWorldToUVScale + View.VolumetricLightmapWorldToUVAdd, 0.0f, .99f);
+
+float3 IndirectionTextureTexelCoordinate = IndirectionVolumeUVs * View.VolumetricLightmapIndirectionTextureSize;
+
+// Get the Brick we need to use
+
+float4 BrickOffsetAndSize = View.VolumetricLightmapIndirectionTexture.Load(int4(IndirectionTextureTexelCoordinate, 0));
+
+float PaddedBrickSize = View.VolumetricLightmapBrickSize + 1;
+
+// Compute the UVs of the texture
+
+// We first offset to the correct Brick and then calculate the UVs inside the brick
+
+float3 BrickTextureUVs = (BrickOffsetAndSize.xyz * PaddedBrickSize + frac(IndirectionTextureTexelCoordinate / BrickOffsetAndSize.w) * View.VolumetricLightmapBrickSize + .5f) * View.VolumetricLightmapBrickTexelSize;
+
+// Compute the Ambient value at the given BrickTextureUVs
+
+return Texture3DSampleLevel(View.VolumetricLightmapBrickAmbientVector, View.VolumetricLightmapBrickAmbientVectorSampler, BrickTextureUVs, 0).xyz;
+
+#else
+
+return float3(1, 1, 1);
+
+#endif
+
+
