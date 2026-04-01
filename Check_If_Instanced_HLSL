@@ -1,0 +1,7 @@
+// Only works with non-Nanite instanced static meshes
+// Might be possible to have this return a bool and plug into a static switch instead of a lerp.
+#if USE_INSTANCE_CULLING
+return float(1);
+#else
+return float(0);
+#endif
